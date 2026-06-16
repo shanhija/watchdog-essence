@@ -1,0 +1,72 @@
+# Watchdog Essence
+
+**Write one spec. Hand it to a coding agent. Watch it build a self-healing watchdog that finds and
+fixes a real bug — in Python *and* TypeScript.**
+
+This repo is a demonstration of an **"essence"**: a distilled, technology-agnostic spec of a whole
+system, written so you can hand it to an AI and have it regrow the system in *your* environment.
+
+<!-- 🎬 TODO: add a ~25s screen recording here (demo.gif). Recipe in _launch/video-shotlist.md -->
+
+## See it heal
+
+Each context ships a tiny buggy app and the services around it — but **no watchdog**. An agent builds
+the watchdog from [`ESSENCE.md`](ESSENCE.md); then `demo` runs the whole loop:
+
+```
+1) BEFORE   the buggy app logs errors
+   LOG ERROR: KeyError: "price" while processing record id=100102 (app/ingest.py)
+   LOG ERROR: KeyError: "price" while processing record id=100104 (app/ingest.py)
+
+2) WATCHDOG reads the logs → drafts a fix to the app's OWN code in a sandbox → opens a PR
+   PR  ingest-price-keyerror
+       - total += r["price"]
+       + total += r.get("price", 0.0)        (+ a regression test; app's tests pass)
+
+3) MERGE the PR and re-run
+   errors after the fix: (none)
+
+HEALED — the watchdog's PR fixed the code that produced the logs
+```
+
+## Try it (the whole point)
+
+`cd` into a context and prompt your coding agent:
+
+> **"Build me a service from this essence in this context."**
+
+The agent reads `ESSENCE.md` + the context's `AGENTS.md` and writes the watchdog. Then prove it:
+
+| Context | Stack | Build target | Prove it |
+|---|---|---|---|
+| [`contexts/python/`](contexts/python/) | Python 3.9+, stdlib only | `watchdog.py` | `python3 demo.py` |
+| [`contexts/typescript/`](contexts/typescript/) | Node ≥ 22.6, runs `.ts` natively — no build | `watchdog.ts` | `node demo.ts` |
+
+Same scenario in both, so one spec demonstrably produces the same closed loop in two stacks. The fake
+services apply a *real* fix and run the app's *real* tests, so the loop closes with no API key — swap
+each fake for the real thing (every file says where) and it becomes a genuinely self-healing service.
+
+## How a context is laid out
+
+```
+contexts/<stack>/
+├── app/            # the buggy log-producing service (watched AND patched)
+├── services/       # the things you already run, as fakes:
+│                   #   log_store · triage_model · sandbox · coding_agent · code_host · notifier
+├── run_app.*       # produce some logs
+├── watchdog.*      # ← BUILD ME (the agent writes this, from the essence)
+├── demo.*          # the end-to-end proof: BEFORE → watchdog → merge the PR → AFTER
+└── README · AGENTS
+```
+
+## What an "essence" is
+
+> The distilled functional core of a working system — its invariants, contracts, state model, and
+> hard-won lessons, with every vendor or tool abstracted to a *role* — written so an LLM with access
+> to your environment can regrow it in your stack. Not a tutorial, not a product, not a project-bound
+> spec: a *transplantable* definition. The two contexts here are the proof: one spec, two stacks, the
+> same bug found and fixed.
+
+## License
+
+[MIT](LICENSE).

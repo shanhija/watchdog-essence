@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / TypeScript
+node_modules/
+*.tsbuildinfo
+
+# datastores / misc
+*.db
+*.sqlite
+.DS_Store
+
+# context runtime artifacts
+app.log
+.prs/
+
+# launch prep (local only, not part of the published repo)
+_launch/

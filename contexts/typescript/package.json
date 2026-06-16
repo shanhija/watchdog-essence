@@ -1,0 +1,17 @@
+{
+  "name": "watchdog-context-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "TypeScript context for the watchdog essence — build watchdog.ts.",
+  "scripts": {
+    "app": "node run_app.ts",
+    "watchdog": "node watchdog.ts",
+    "demo": "node demo.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

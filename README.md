@@ -6,28 +6,28 @@ fixes a real bug — in Python *and* TypeScript.**
 This repo is a demonstration of an **"essence"**: a distilled, technology-agnostic spec of a whole
 system, written so you can hand it to an AI and have it regrow the system in *your* environment.
 
-<!-- 🎬 TODO: add a ~25s screen recording here (demo.gif). Recipe in _launch/video-shotlist.md -->
+<p align="center">
+  <img src="claude.gif" alt="A coding agent reads ESSENCE.md, writes the watchdog, and it fixes a real bug" width="820">
+</p>
+
+<p align="center"><em>A coding agent reads <code>ESSENCE.md</code> and writes the watchdog from scratch — then it finds and fixes a real bug.</em></p>
 
 ## See it heal
 
 Each context ships a tiny buggy app and the services around it — but **no watchdog**. An agent builds
-the watchdog from [`ESSENCE.md`](ESSENCE.md); then `demo` runs the whole loop:
+the watchdog from [`ESSENCE.md`](ESSENCE.md); then `demo` runs the whole loop: the app logs an error →
+the watchdog drafts a fix to the app's **own** code in a sandbox → opens a PR → and merging it makes
+the app run clean.
 
-```
-1) BEFORE   the buggy app logs errors
-   LOG ERROR: KeyError: "price" while processing record id=100102 (app/ingest.py)
-   LOG ERROR: KeyError: "price" while processing record id=100104 (app/ingest.py)
+<p align="center">
+  <img src="demo_python.gif" alt="The closed loop running in the Python context" width="760"><br>
+  <em>The closed loop — Python.</em>
+</p>
 
-2) WATCHDOG reads the logs → drafts a fix to the app's OWN code in a sandbox → opens a PR
-   PR  ingest-price-keyerror
-       - total += r["price"]
-       + total += r.get("price", 0.0)        (+ a regression test; app's tests pass)
-
-3) MERGE the PR and re-run
-   errors after the fix: (none)
-
-HEALED — the watchdog's PR fixed the code that produced the logs
-```
+<p align="center">
+  <img src="demo_typescript.gif" alt="The closed loop running in the TypeScript context" width="760"><br>
+  <em>…and the same essence, rebuilt in TypeScript.</em>
+</p>
 
 ## Try it (the whole point)
 

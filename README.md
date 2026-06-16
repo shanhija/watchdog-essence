@@ -67,6 +67,12 @@ contexts/<stack>/
 > spec: a *transplantable* definition. The two contexts here are the proof: one spec, two stacks, the
 > same bug found and fixed.
 
+## How it was built
+
+This whole repo — the spec, then both contexts — was built by prompting an AI coding assistant. The
+actual prompts, verbatim and in order, are in **[MAKING-OF.md](MAKING-OF.md)**. (Fittingly: *the
+prompts are the spec.*)
+
 ## License
 
 [MIT](LICENSE).

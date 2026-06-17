@@ -1,0 +1,9 @@
+# The watchdog service's own dependencies.
+anthropic>=0.49          # the triage model + remedy adjudicator (provider-agnostic seam)
+httpx>=0.27              # Loki + GitHub API over the network
+
+# The watched app's full runtime + test deps must be present in the watchdog image so the
+# smoke gate is REAL (ESSENCE §4F, Appendix I). Kept in sync with the app's requirements.txt.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pytest>=8.0

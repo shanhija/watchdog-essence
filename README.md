@@ -41,13 +41,15 @@ The agent reads `ESSENCE.md` + the context's `AGENTS.md` and writes the watchdog
 |---|---|---|---|
 | [`contexts/python/`](contexts/python/) | Python 3.9+, stdlib only | `watchdog.py` | `python3 demo.py` |
 | [`contexts/typescript/`](contexts/typescript/) | Node ≥ 22.6, runs `.ts` natively — no build | `watchdog.ts` | `node demo.ts` |
-| [`contexts/fastapi/`](contexts/fastapi/) | Python + FastAPI, **real** Loki + Claude | `watchdog.py` | `docker compose up` → `python3 watchdog.py` |
+| [`contexts/fastapi/`](contexts/fastapi/) | Python + FastAPI, **real** Loki + Claude | a `watchdog` service in `docker-compose.yml` | [reference build →](examples/fastapi-watchdog/) |
 
 The first two share one scenario, so one spec demonstrably produces the same closed loop in two stacks
 with *fake* services — yet a **real** fix and the app's **real** tests, so it closes with no API key.
 The third, [`fastapi/`](contexts/fastapi/), swaps the fakes for the real things: a FastAPI app shipping
 logs to a real **Loki**, triaged and fixed by **real Claude** (your `claude` login, or an API key). Same
-essence, all the way to production-shaped.
+essence, all the way to production-shaped. A fresh agent's build of that context lives in
+[`examples/fastapi-watchdog/`](examples/fastapi-watchdog/) — a complete deployable service, including the
+`DECISIONS.md` it wrote where the environment left a choice open.
 
 ## How a context is laid out
 
@@ -62,17 +64,22 @@ contexts/<stack>/
 └── README · AGENTS
 ```
 
+(That's the two stdlib contexts. The [`fastapi/`](contexts/fastapi/) context is the real-infra shape
+instead — a FastAPI app + a `docker-compose.yml` with real Loki, no fakes and no stub — where the agent
+builds a watchdog **service** into the compose. See [`examples/fastapi-watchdog/`](examples/fastapi-watchdog/)
+for what that produces.)
+
 ## What an "essence" is
 
 > The distilled functional core of a working system — its invariants, contracts, state model, and
 > hard-won lessons, with every vendor or tool abstracted to a *role* — written so an LLM with access
 > to your environment can regrow it in your stack. Not a tutorial, not a product, not a project-bound
-> spec: a *transplantable* definition. The two contexts here are the proof: one spec, two stacks, the
-> same bug found and fixed.
+> spec: a *transplantable* definition. The contexts here are the proof: one spec, the same bug found and
+> fixed in Python and TypeScript, then rebuilt as a real deployable service against Loki + Claude.
 
 ## How it was built
 
-This whole repo — the spec, then both contexts — was built by prompting an AI coding assistant. The
+This whole repo — the spec, then the contexts — was built by prompting an AI coding assistant. The
 actual prompts, verbatim and in order, are in **[MAKING-OF.md](MAKING-OF.md)**. (Fittingly: *the
 prompts are the spec.*)
 

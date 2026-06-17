@@ -1,0 +1,70 @@
+# A small FastAPI service shipping its logs to Loki.
+#
+#   docker compose up --build    # app on :8000, Loki on :3100, Grafana on :3000
+#   ./seed.sh                     # generate some traffic
+services:
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+
+  app:
+    build: .
+    environment:
+      LOKI_URL: http://loki:3100
+      APP_SERVICE: kvstore
+    ports:
+      - "8000:8000"
+    depends_on:
+      - loki
+
+  # The watchdog — the resident service grown from ESSENCE.md, deployed BESIDE the app it
+  # watches (ESSENCE §2.11, Appendix I). It reaches Loki over the network by configuration,
+  # provisions its own ephemeral sandboxes, and depends on nothing from a developer's laptop.
+  watchdog:
+    build:
+      context: .
+      dockerfile: watchdog/Dockerfile
+    environment:
+      LOG_STORE_URL: http://loki:3100
+      RULES: '[{"name": "kvstore-errors", "query": "{service=\"kvstore\",level=\"ERROR\"}"}]'
+      # The triage model + coding agent are inherently LLM-backed (ESSENCE §6). Provide a key:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DB_PATH: /data/watchdog.db
+      REPORTS_DIR: /data/reports
+      REPO_ROOT: /srv          # the pristine source the sandboxes copy from
+      SMOKE_COMMAND: python -m pytest app/tests -q
+      # Auto-PR ships OFF (ESSENCE §9): you get a tested draft fix in the report with zero
+      # branch risk. To turn it on, set a code host + token and AUTO_PR_ENABLED=true:
+      AUTO_PR_ENABLED: "false"
+      # CODE_HOST: github
+      # GITHUB_REPO: your-org/kvstore
+      # CODE_HOST_TOKEN: ${CODE_HOST_TOKEN:-}
+      # REVIEW_BRANCH: integration
+      POLL_INTERVAL_S: "60"
+    volumes:
+      - watchdog-data:/data   # durable datastore + reports (the source of truth survives restarts)
+    ports:
+      - "8080:8080"           # /healthz, /readyz, /metrics
+    restart: unless-stopped   # supervised forever; restart-safety is free (ESSENCE §12)
+    depends_on:
+      - loki
+
+  # Optional: eyeball the logs at http://localhost:3000 (anonymous admin, no login).
+  # Add Loki as a data source pointed at http://loki:3100, query: {service="kvstore"}.
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki
+
+volumes:
+  watchdog-data:

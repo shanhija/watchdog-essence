@@ -301,8 +301,8 @@ Three fingerprints, all "normalize then hash." The normalization is the whole ga
 *volatile* detail while preserving *identity*.
 
 **Line fingerprint** — normalize the line, then hash. Normalization masks, in order of specificity:
-timestamps → dates → UUIDs → URL path+query (keep scheme+host, mask the rest) → file/resource paths
-with extensions → hex addresses → `File "...", line N` and bare `line N` → IP addresses → epoch
+timestamps → dates → UUIDs → URL path+query (keep scheme+host, mask the rest) → bare request/absolute paths (any
+query) → file/resource paths with extensions → hex addresses → `File "...", line N` and bare `line N` → IP addresses → epoch
 numbers (10–13 digits) → long digit runs (ids). Then collapse whitespace. Order matters (mask the
 full timestamp before the bare date, UUIDs before digit-runs, etc.). The result stays human-readable
 (placeholders like `<TIMESTAMP>`, `<PATH>`), which helps debugging. **Why this exact set:** these are
@@ -942,7 +942,7 @@ space. Order matters — mask the full timestamp before the bare date, UUIDs bef
  2  bare ISO date (YYYY-MM-DD)                    → <DATE>
  3  UUID                                          → <UUID>
  4  URL (keep scheme+host, mask the rest)         → <scheme://host>/<PATH>
- 5  bare path with a file extension               → <PATH>
+ 5  bare path (≥2 segments) — absolute/request with any query, or with a file extension → <PATH>
  6  hex address (0x…)                             → <HEX>
  7  File "…", line N                              → File "<F>", line <N>
  8  bare "line N"                                 → line <N>

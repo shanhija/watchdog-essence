@@ -29,6 +29,12 @@ Read it in three passes if you're reimplementing:
    data shapes and role contracts, the fingerprint algorithm, the state schema, reference defaults, and
    the deployment / runtime shape (it runs as a resident service, not a script).
 
+**Before you build, map the essence to *this* environment (§17):** assume the system you're watching
+lives in this repository — under or alongside the folder this file sits in — and look there for where
+its logs go, where its source and tests live, and how it's deployed. Match each role (§3) to what you
+find. Where the environment is missing a role (no code host, no notifier) or a choice isn't obvious
+(including *where* to deploy), **ask the user with concrete suggestions — don't silently invent one.**
+
 ---
 
 ## 1. What it is, in one paragraph
@@ -98,11 +104,22 @@ the same system. If you drop these to save effort, you'll rebuild them after the
     long-running process packaged and deployed in the *same environment* as the system it watches (a
     service in the same compose/cluster, a supervised daemon), started once and run forever — not a
     command a human triggers. It must depend on nothing that exists only on a developer's machine: no
-    local working checkout to mutate, no interactive tooling (`gh`, an editor, a logged-in shell). **Find how the watched system itself is deployed — a `docker-compose.yml`, a
-    Kubernetes manifest, a Procfile, a systemd unit — and add the watchdog there, the same way; don't
-    invent a separate run path (a host script).** It
+    local working checkout to mutate, no interactive tooling (`gh`, an editor, a logged-in shell). **Deploy it as a real service in an appropriate substrate — a `docker-compose.yml`, a
+    Kubernetes manifest, a systemd unit — not a separate hand-run path (a host script).** It belongs
+    wherever it can reach the log store and provision sandboxes: usually the watched app's substrate,
+    sometimes the observability stack's instead (e.g. the app in Kubernetes, the logs in a Compose
+    stack on another host). If the right home isn't obvious, propose the options to the user (§2.12). It
     provisions its own ephemeral workspaces and reaches the ***log store***, ***datastore***, ***code
     host***, and ***LLM*** **over the network, by configuration**. (Concrete shape: Appendix I.)
+
+12. **Discover the environment; map the roles to it; ask — with suggestions — on every gap.** Before
+    building, read the environment: assume the system you're watching lives in *this* repository (under
+    or alongside the folder this essence sits in) and find what fills each role (§3, §17) — where logs
+    go, where source + tests live, how it's deployed, what could open a PR or deliver a report. The
+    environment won't always have every role: often there's no code host wired up for automation, no
+    notifier, no obvious deploy target. **Never silently invent or assume the missing piece** — surface
+    the gap, and any genuinely ambiguous fork (including *where* to deploy, §2.11), to the user with
+    concrete, opinionated suggestions, and let them decide.
 
 ---
 
@@ -691,6 +708,16 @@ You don't need all of this on day one. A sensible order, each phase independentl
 
 ## 17. Adaptation checklist (map these to your stack)
 
+**Start by reading the environment — don't assume it.** Assume the system you're watching lives in *this*
+repository (under or alongside the folder this essence sits in) and inspect it: where do its logs go,
+where are its source and tests, how is it deployed, and what — if anything — could open a pull request or
+deliver a report? Map each role below to what you actually find. **Some roles won't be there:** many real
+setups have no code host wired up for automation, no notifier, no obvious place to run a sandbox or deploy
+the service. When a role is missing or a choice is ambiguous, **don't invent one silently — present the
+options to the user with a recommendation and let them choose** (e.g. "there's no code host configured; I
+can open PRs to a GitHub repo if you give me one + a token, write patch files to a directory, or just
+attach the diff to the report — which do you want?").
+
 - ***Log store*** with a time-range query API, and a **rule** = an error-level query for one service.
 - ***Datastore*** with upsert/`ON CONFLICT` semantics for the four tables in §12.
 - ***Triage model*** that supports forced structured/function output.
@@ -1017,7 +1044,11 @@ script on a laptop) — the failure mode this appendix exists to prevent. Packag
 same environment as the watched app: another service in the same `docker compose`, a Deployment in the
 same Kubernetes cluster, a Nomad job, or a supervised `systemd` unit on the same host. It reaches the
 **log store, datastore, code host, and model over the network, by configuration** — never from a local
-checkout or an interactive CLI.
+checkout or an interactive CLI. **What it truly needs is reach to the log store (and somewhere to provision
+sandboxes); the watched app's substrate is the common home, not the only one.** If the app runs in
+Kubernetes while the logs land in a Compose stack on another VM, the watchdog may belong with the
+*observability* stack instead. When the right home isn't obvious from the environment, propose the options
+to the user and let them choose — don't guess.
 
 **The service loop** (its main loop; ESSENCE §4 + §7):
 

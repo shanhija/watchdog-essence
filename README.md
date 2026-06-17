@@ -41,10 +41,13 @@ The agent reads `ESSENCE.md` + the context's `AGENTS.md` and writes the watchdog
 |---|---|---|---|
 | [`contexts/python/`](contexts/python/) | Python 3.9+, stdlib only | `watchdog.py` | `python3 demo.py` |
 | [`contexts/typescript/`](contexts/typescript/) | Node ≥ 22.6, runs `.ts` natively — no build | `watchdog.ts` | `node demo.ts` |
+| [`contexts/fastapi/`](contexts/fastapi/) | Python + FastAPI, **real** Loki + Claude | `watchdog.py` | `docker compose up` → `python3 watchdog.py` |
 
-Same scenario in both, so one spec demonstrably produces the same closed loop in two stacks. The fake
-services apply a *real* fix and run the app's *real* tests, so the loop closes with no API key — swap
-each fake for the real thing (every file says where) and it becomes a genuinely self-healing service.
+The first two share one scenario, so one spec demonstrably produces the same closed loop in two stacks
+with *fake* services — yet a **real** fix and the app's **real** tests, so it closes with no API key.
+The third, [`fastapi/`](contexts/fastapi/), swaps the fakes for the real things: a FastAPI app shipping
+logs to a real **Loki**, triaged and fixed by **real Claude** (your `claude` login, or an API key). Same
+essence, all the way to production-shaped.
 
 ## How a context is laid out
 

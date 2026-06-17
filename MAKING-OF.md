@@ -1,6 +1,6 @@
 # The prompts behind the Watchdog Essence
 
-This is the sequence of prompts that produced [`ESSENCE.md`](ESSENCE.md) and this two-context demo
+This is the sequence of prompts that produced [`ESSENCE.md`](ESSENCE.md) and this demo
 repo — shared in the spirit of the project itself: *the prompts are the spec.* They're reproduced
 verbatim (typos and all); the short *italic notes* say what each step changed.
 
@@ -129,3 +129,39 @@ Two follow-up choices (answers to clarifying questions):
 *A fresh agent, given only the essence + the context, built the watchdog and the closed loop ran end
 to end: bug → log → fix → PR → healed. Both the Python and TypeScript contexts were verified the same
 way, then this repo was published.*
+
+---
+
+## 8. After publishing: make it specific, and production-shaped
+
+> let's add a more complex context that has a real fastapi endpoint that returns a value from a dict
+> that can be extended by another endpoint, but that has a bug that doesn't check if the key exists and
+> throws an error.
+>
+> i want to have this in a docker compose, that also has loki in it. furthermore, i want the code agent
+> and triage llm to both use claude with my existing credentials.
+>
+> and this begs the question, should the triage, and other roles, be more specifically defined? i think
+> at least triage and code agent, both are prompted, and this prompt specificity i think should be in
+> the essence. you can think of it the other way around as well: what are the feasible options for
+> triage and coding agent _other than_ some LLM? we may impose requirements (and i think we do) on the
+> systems acting on the roles, so let's extend the LLM requirements to being a coding agent of an LLM,
+> and the triage some tooling to provide AI chat, and have the prompts, i.e., specifics, already in the
+> essence.
+>
+> in general, try to distil as much details and specifics into the essence as possible, while still
+> being tech agnostic to a reasonable level.
+
+> one more addition: please check which other parts of the essence can you make more specific?
+
+> do all
+
+*Two moves in one. First, a sharper take on the roles: triage and the coding agent have no feasible
+non-LLM implementation, so the essence now **names them as AI roles** with hard requirements (triage =
+an LLM / AI-chat with structured output; coding agent = an autonomous LLM agent that edits + runs tests)
+and ships their **actual prompts**, not just design principles. The rest of the specifics — data shapes,
+role interfaces, the fingerprint algorithm, the state schema, the gate/branch formulas, and a
+reference-defaults table — became **Appendices A–H**, keeping the body a three-pass read. Second, a
+third context, `fastapi/`: a real FastAPI app shipping logs to a real Loki, triaged and fixed by real
+Claude (the `claude` CLI's native structured output, or the API when a key is present) — proving the
+essence past the fakes and into a production-shaped stack.*

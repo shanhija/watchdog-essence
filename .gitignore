@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.pytest_cache/
 
 # Node / TypeScript
 node_modules/
@@ -19,3 +20,6 @@ app.log
 
 # launch prep (local only, not part of the published repo)
 _launch/
+
+# local recording aid — a known-good watchdog to record the demo against
+watchdog.reference.*

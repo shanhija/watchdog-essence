@@ -1,0 +1,40 @@
+# The context environment: a real FastAPI app shipping logs to a real Loki.
+#
+#   docker compose up --build         # app on :8000, Loki on :3100, Grafana on :3000
+#   ./seed.sh                          # generate traffic incl. the 500s the bug causes
+#   python3 watchdog.py                # run on the HOST (uses your `claude` login + Loki)
+#
+# The watchdog runs on the host, NOT in compose, because it shells out to the
+# `claude` CLI (authenticated by your Claude.ai login in ~/.claude). It reaches Loki
+# at http://localhost:3100. See README.md.
+services:
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/loki-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+
+  app:
+    build: .
+    environment:
+      LOKI_URL: http://loki:3100
+      APP_SERVICE: kvstore
+    ports:
+      - "8000:8000"
+    depends_on:
+      - loki
+
+  # Optional: eyeball the logs at http://localhost:3000 (anonymous admin, no login).
+  # Add Loki as a data source pointed at http://loki:3100, query: {service="kvstore"}.
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - loki

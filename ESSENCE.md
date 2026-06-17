@@ -98,7 +98,9 @@ the same system. If you drop these to save effort, you'll rebuild them after the
     long-running process packaged and deployed in the *same environment* as the system it watches (a
     service in the same compose/cluster, a supervised daemon), started once and run forever — not a
     command a human triggers. It must depend on nothing that exists only on a developer's machine: no
-    local working checkout to mutate, no interactive tooling (`gh`, an editor, a logged-in shell). It
+    local working checkout to mutate, no interactive tooling (`gh`, an editor, a logged-in shell). **Find how the watched system itself is deployed — a `docker-compose.yml`, a
+    Kubernetes manifest, a Procfile, a systemd unit — and add the watchdog there, the same way; don't
+    invent a separate run path (a host script).** It
     provisions its own ephemeral workspaces and reaches the ***log store***, ***datastore***, ***code
     host***, and ***LLM*** **over the network, by configuration**. (Concrete shape: Appendix I.)
 
@@ -1006,7 +1008,12 @@ system it watches** and supervised forever (ESSENCE §2.11). That is the differe
 something that does first-line response: it has to be *up* when the bug happens, with no human in the
 loop and nothing borrowed from a developer's laptop.
 
-**Where it runs.** Package it as a deployable unit (a container image / a service) and deploy it in the
+**Where it runs — match the watched system's own deployment substrate; discover it, don't assume one.**
+Look at how the app you're watching is actually deployed and *join it there*: a service in its
+`docker-compose.yml` → add the watchdog as another service in that same file; a Kubernetes Deployment →
+add a Deployment; a `systemd` process → add a unit. The wrong answer is a separate, hand-run path (a
+script on a laptop) — the failure mode this appendix exists to prevent. Package it as a deployable unit
+(a container image / a service) and deploy it in the
 same environment as the watched app: another service in the same `docker compose`, a Deployment in the
 same Kubernetes cluster, a Nomad job, or a supervised `systemd` unit on the same host. It reaches the
 **log store, datastore, code host, and model over the network, by configuration** — never from a local
@@ -1041,6 +1048,12 @@ tool on someone's terminal. (In a `docker compose`, the watchdog service either 
 image as a stage, or clones the repo and installs deps into a tempdir at attempt time; for a container
 sandbox it needs access to a container runtime — a mounted socket or a sandbox API.)
 
+**The coding agent's credential goes *into* the container — it is not a reason to run on the host.** The
+agent's CLI/SDK runs headless inside the service; credential it the way you credential any container —
+an API key in the environment, or by mounting the CLI's credential directory (read-only) into the
+service. "The CLI is logged in on my machine" is the single most common reason these get mis-deployed as
+a host script — mount the credential in instead.
+
 **Config & secrets — all via the environment**, nothing baked in: the rule(s)/log-store query, the
 log-store + datastore URLs, the **code-host token** (branch push + PR open over the API), the model auth
 (an API key, or a mounted CLI credential), the budgets and floors (App. H), and the review/integration
@@ -1066,6 +1079,8 @@ services:
       CODE_HOST_TOKEN: ${CODE_HOST_TOKEN}                # branch push + PR open, over the API
       MODEL_AUTH:      ${MODEL_AUTH}                      # API key, or a mounted CLI credential
       REVIEW_BRANCH:   integration
+    # If the coding-agent CLI authenticates via a logged-in profile (not an API key), mount its
+    # credential dir read-only here (a volumes: entry) — still in the container, not a host run.
     # NO bind-mount of a working checkout: it clones fresh into a throwaway env per fix attempt.
     restart: unless-stopped
     depends_on: [log-store]

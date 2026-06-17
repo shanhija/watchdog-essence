@@ -1,12 +1,7 @@
-# The context environment: a real FastAPI app shipping logs to a real Loki.
+# A small FastAPI service shipping its logs to Loki.
 #
-#   docker compose up --build         # app on :8000, Loki on :3100, Grafana on :3000
-#   ./seed.sh                          # generate traffic incl. the 500s the bug causes
-#   python3 watchdog.py                # run on the HOST (uses your `claude` login + Loki)
-#
-# The watchdog runs on the host, NOT in compose, because it shells out to the
-# `claude` CLI (authenticated by your Claude.ai login in ~/.claude). It reaches Loki
-# at http://localhost:3100. See README.md.
+#   docker compose up --build    # app on :8000, Loki on :3100, Grafana on :3000
+#   ./seed.sh                     # generate some traffic
 services:
   loki:
     image: grafana/loki:3.0.0

@@ -1,10 +1,9 @@
-"""The app's own tests — the smoke gate the watchdog's fix must pass.
+"""The app's own tests.
 
-These cover the happy paths and pass against the buggy code (they only ask for keys
-that exist). The fix the watchdog drafts should ADD a regression test for the missing
--key case (currently a 500) asserting a clean 404 — see app/main.py:get_item.
+These cover the happy paths and pass against the current code (they only ask for keys
+that exist). The missing-key case currently 500s — see app/main.py:get_item.
 
-Smoke command (shared by the agent and the gate):  python -m pytest app/tests -q
+Run them:  python -m pytest app/tests -q
 """
 from fastapi.testclient import TestClient
 

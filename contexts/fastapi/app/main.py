@@ -1,16 +1,14 @@
-"""A tiny FastAPI key/value service — the app the watchdog watches AND patches.
+"""A tiny FastAPI key/value service.
 
-    GET  /items/{key}   -> the stored value      (THE BUG: assumes the key exists)
+    GET  /items/{key}   -> the stored value      (BUG: assumes the key exists)
     POST /items/{key}   -> store / extend a value
     GET  /healthz       -> liveness
 
 Run locally:   uvicorn app.main:app --reload
 In compose:    the `app` service runs this and ships error logs to Loki.
 
-The bug is deliberately the kind a watchdog can fix safely and minimally: a missing
-dict key raises ``KeyError`` -> a 500 + an error log. The fix is to check the key
-and return a clean 404 (plus a regression test). That's the change the agent-built
-watchdog should draft, sandbox-test, and open as a PR.
+The bug: a missing dict key raises ``KeyError`` -> a 500 + an error log (left in on
+purpose). The obvious fix is to check the key and return a clean 404.
 """
 import logging
 
@@ -36,10 +34,8 @@ class Item(BaseModel):
 
 @app.middleware("http")
 async def catch_and_log(request: Request, call_next):
-    """Turn any unhandled exception into a 500 and log it loudly with a traceback.
-
-    Making failures loud (ESSENCE lesson) is what gives the log store a real,
-    fingerprintable error line for triage to cluster and locate.
+    """Turn any unhandled exception into a 500 and log it loudly with a traceback,
+    so failures show up as clear, traceback-bearing ERROR lines in the logs.
     """
     try:
         return await call_next(request)
@@ -62,7 +58,6 @@ def put_item(key: str, item: Item):
 
 @app.get("/items/{key}")
 def get_item(key: str):
-    # BUG: assumes the key is present. A request for a missing key raises KeyError,
-    # which the middleware turns into a 500 and logs as an ERROR. The watchdog's job
-    # is to make this a clean 404 (key-not-found) instead — a small, safe fix.
+    # BUG: assumes the key is present. A missing key raises KeyError, which the
+    # middleware turns into a 500 and logs as an ERROR. (Should arguably be a 404.)
     return {"key": key, "value": STORE[key]}

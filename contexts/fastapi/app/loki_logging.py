@@ -1,11 +1,11 @@
 """Logging setup for the kvstore app: pretty stdout plus — when ``LOKI_URL`` is
-set — pushing WARNING/ERROR records to Loki's HTTP push API, so the watchdog's
-log store has real, fingerprintable error lines (with tracebacks) to read.
+set — pushing WARNING/ERROR records (with tracebacks) to Loki's HTTP push API, so
+errors are queryable in Loki.
 
 In production a log shipper (Promtail, the Loki Docker driver, Fluent Bit, Vector,
 a cloud logging agent…) would do this out-of-band. Here the app pushes directly so
-the whole demo is one `docker compose up` with no shipper to configure. Swapping in
-a real shipper changes nothing the watchdog sees — it queries Loki either way.
+the whole thing is one `docker compose up` with no shipper to configure — swapping
+in a real shipper changes nothing about what ends up in Loki.
 """
 import logging
 import os
@@ -30,8 +30,7 @@ class LokiHandler(logging.Handler):
             return
         try:
             # format() includes the traceback when record.exc_info is set, so the
-            # pushed line carries "KeyError: '<key>'" and the app/main.py frame —
-            # exactly what triage needs to cluster + locate the bug.
+            # pushed line carries "KeyError: '<key>'" and the app/main.py frame.
             line = self.format(record)
             ts = str(time.time_ns())
             payload = {

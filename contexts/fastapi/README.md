@@ -1,25 +1,37 @@
-# Context: FastAPI + Loki + Claude (the "real" one)
+# kvstore — a tiny FastAPI service
 
-The [`python/`](../python/) and [`typescript/`](../typescript/) contexts prove the
-essence with *fakes* (no API key, deterministic stand-ins). **This one proves it against
-real infrastructure**: a FastAPI app shipping logs to a real **Loki**, triaged and fixed
-by **real Claude**.
-
-## What's in the box
-
-- `app/` — a tiny **FastAPI** key/value service with a real bug (`GET /items/{key}` 500s
-  on a missing key) — the code the watchdog watches *and* patches.
-- `docker-compose.yml` — the app + **Loki** (+ optional Grafana for eyeballing logs).
+A minimal key/value HTTP service that ships its logs to **Loki**, wired up with Docker
+Compose. Deliberately small.
 
 ## Run it
 
 ```bash
-# 1. Bring up the environment (app on :8000, Loki on :3100, Grafana on :3000):
-docker compose up --build
+docker compose up --build     # app on :8000, Loki on :3100, Grafana on :3000
+./seed.sh                      # send some traffic (a few reads, a few errors)
+```
 
-# 2. Install the app's deps on the host (the sandbox runs the app's real pytest):
+Browse the logs in Grafana at http://localhost:3000 (anonymous), or query Loki's API on
+:3100 directly.
+
+## Endpoints
+
+| Method | Path           | Does |
+|---|---|---|
+| `GET`  | `/items/{key}` | return the stored value for `key` |
+| `POST` | `/items/{key}` | store/replace a value — body `{"value": "..."}` |
+| `GET`  | `/healthz`     | liveness |
+
+## Layout
+
+- `app/` — the service (`app/main.py`) and its tests (`app/tests/`)
+- `docker-compose.yml` — the app + Loki (+ Grafana)
+- `Dockerfile`, `requirements.txt` — how the app image is built
+- `seed.sh` — a small traffic generator
+- `loki-config.yaml` — minimal Loki config
+
+## Develop
+
+```bash
 python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
-
-# 3. Generate traffic — some requests hit missing keys -> 500 -> ERROR logs in Loki:
-./seed.sh
+python -m pytest app/tests -q
 ```

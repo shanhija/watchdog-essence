@@ -56,8 +56,13 @@ Auto-PR ships **off** (ESSENCE §9): you get a tested draft fix in `reports/`, z
 
 - It defaulted to `ANTHROPIC_API_KEY` for both AI roles; a subscription-only setup would mount the Claude
   CLI credential into the container instead.
-- The GitHub code-host adapter opens the PR over the API but doesn't wire the compare-and-swap `git push`
-  to a real remote (it's off the default auto-PR-off path) — flagged in `watchdog/codehost.py` + `DECISIONS.md`.
+- **The PR-push step is intentionally left incomplete.** The GitHub adapter builds the right PR (title,
+  body, the committed `bot/…` branch + diff) and opens it over the API — but the prerequisite, pushing that
+  branch to a real remote with a compare-and-swap (`git push --force-with-lease`), is a deliberate stub. It
+  depends on your remote, auth, and branch-protection setup, so it's left for you to wire when you turn
+  auto-PR on; the default posture (auto-PR off → tested diff in the report) works without it. This is a good
+  example of the kind of seam the spec expects you to finish in your own environment (see the repo README).
+  Flagged in `watchdog/codehost.py` + `DECISIONS.md`.
 
 The spec it grew from is [`../../ESSENCE.md`](../../ESSENCE.md); the prompts behind the spec are in
 [`../../MAKING-OF.md`](../../MAKING-OF.md).

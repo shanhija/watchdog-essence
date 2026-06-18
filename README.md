@@ -51,6 +51,13 @@ essence, all the way to production-shaped. A fresh agent's build of that context
 [`examples/fastapi-watchdog/`](examples/fastapi-watchdog/) — a complete deployable service, including the
 `DECISIONS.md` it wrote where the environment left a choice open.
 
+**What you get, and what you finish.** The essence builds the *bulk* of the watchdog for you — the
+pipeline, the state model, the prompts, the deployment shape. In a real environment, some parts will still
+need implementing or tweaking to fit your stack (a code host's push, an auth detail, a log-query quirk) —
+that's expected, not a shortfall. You finish the job the way the spec itself says to build it: **stand up
+your stack, drive a real error end-to-end, and iterate on what breaks** until it heals. (The reference
+build's PR-push is one such intentionally-left seam.)
+
 ## How a context is laid out
 
 ```

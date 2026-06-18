@@ -165,3 +165,77 @@ reference-defaults table — became **Appendices A–H**, keeping the body a thr
 third context, `fastapi/`: a real FastAPI app shipping logs to a real Loki, triaged and fixed by real
 Claude (the `claude` CLI's native structured output, or the API when a key is present) — proving the
 essence past the fakes and into a production-shaped stack.*
+
+---
+
+## 9. It built a host script — make it a deployed service
+
+> turns out claude wants to use the local environment to manually trigger the watchdog, but my intention
+> was to have a running service beside the other running services that would do this all the time. like
+> the watchdog we have now. in this fastapi example, i would have thought the solution would have been
+> another docker in the docker compose that reads loki and spans a patcher within the docker compose, not
+> a worktree locally. this solution really isn't usable nor production ready. can you modify the essence
+> to make a more production-ready long-lasting solution alongside the existing services?
+
+*The essence said "a single long-running service" but still offered a `git worktree` off a local checkout
+as a fine sandbox — so a fresh agent built a host-run, manually-triggered script. Added invariant §2.11
+("deploy it as a service, beside what it watches — depend on no one's laptop"), reframed §1/§4 around a
+**resident service**, demoted the worktree-of-a-working-copy to "local-dev, not deployed," and wrote
+**Appendix I — Deployment & runtime** (the supervised loop, a container sandbox, the agent credential
+mounted into the service, a Compose sketch).*
+
+---
+
+## 10. Building it found a bug in the spec itself
+
+> also, it discovered this:
+
+*(The message came with a build's own log: mid-flight it had to fix its fingerprint normalizer, because
+the essence's §5 worked example — `/sensors/28191/days` and `/sensors/4/days` must collide — wasn't
+satisfied by Appendix F's rules.) A bare multi-segment request path, with no scheme+host and no file
+extension, slipped through every masking rule, and its ids were too short for the digit rules — so the
+spec's own worked example failed its own algorithm. Fixed §5 and Appendix F to mask bare request/absolute
+paths. The spec getting debugged* by being built *is the whole point.*
+
+---
+
+## 11. A context with no idea a watchdog is coming
+
+> i want the essence to work in a context that doesn't have any knowledge, stubs, scaffolding or even a
+> mention of a watchdog. hence, i don't want a watchdog -file, but the essence should be able to determine
+> where the long-lived service should go to. and in this fastapi case, somehow it should end up in docker
+> compose. perhaps strip the wordings in that fastapi folder to not steer the llm towards host-run
+
+> also, the watchdog does not always need to be deployed like the service. for example in my case, the
+> services live in k8s while the observability stack live in docker compose on another vm. if the AI is
+> unsure, perhaps prompt the user with suggestions? also there should be explicit instructions in the
+> essence to discover the services that could act on the roles. perhaps a reasonable assumption is the
+> source code live in the same repository/under the folder the essence is.
+
+*Stripped every watchdog/essence word out of the `fastapi` context so it's just a buggy app — the spec
+alone has to drive the build. Then taught the essence to **discover and decide**: §0 + §17 + invariant
+§2.12 now tell the agent to assume the source lives in this repo, map each role to what's actually there,
+and — when a role is missing (no code host, no notifier) or a choice is ambiguous (including* where *to
+deploy) — **ask the user with suggestions instead of inventing one**. The deploy rule got nuance too: a
+watchdog belongs wherever it can reach the log store, which isn't always the app's substrate (k8s app,
+Compose observability on another box).*
+
+---
+
+## 12. Run it for real; fix what breaks; make the spec test itself
+
+> could you test the new fastapi-watchdog and fix any bugs?
+
+> please update the essence to make sure a new essence build wouldn't have these problems. also, provision
+> the essence in a way that the agent building the watchdog tests the whole watchdog end-to-end like you
+> have just now. with such a complex service, it's highly likely that there will be bugs from the first
+> iteration, so provision the essence to do iterations to fix any emerging bugs.
+
+*Ran the reference build live — real Loki, a real key — and drove an error end to end. It worked, but
+surfaced two seam bugs: the coding agent was launched in an edit-only permission mode (so headless it
+couldn't run the gate or commit), and the fix diff captured tooling the agent had dropped into the
+sandbox. Fixed both, and folded the lessons into the essence (§4E, Appendix D, lessons 14–15). Then
+provisioned the spec to **build → test end-to-end against a live stack → iterate** (a §0 line, a new §14
+"Build acceptance," §16, lesson 16) — because a service this complex never works on the first try. (A
+third finding — the GitHub PR-push isn't wired — was left as a deliberate, environment-specific seam, and
+documented as such.)*

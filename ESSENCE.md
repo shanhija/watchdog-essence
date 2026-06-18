@@ -35,6 +35,12 @@ its logs go, where its source and tests live, and how it's deployed. Match each 
 find. Where the environment is missing a role (no code host, no notifier) or a choice isn't obvious
 (including *where* to deploy), **ask the user with concrete suggestions — don't silently invent one.**
 
+**You're not done when the unit tests pass — you're done when a real error heals.** A service this size
+won't work on the first iteration. After you build it, stand up the actual stack (the log store, a
+log-producing app), drive a *real* error all the way through — ingest → triage → sandboxed fix → gate →
+report/PR — and watch what it produces. Fix what breaks and run it again. Budget for several build → run
+→ observe → fix iterations against that live loop; it's the only test that proves the thing works (§14).
+
 ---
 
 ## 1. What it is, in one paragraph
@@ -275,8 +281,14 @@ runtime + test deps:
 3. Run the **coding agent** non-interactively against the working copy, with the incident
    **inlined into its prompt** (severity, root-cause hypothesis, sample log lines, suspected
    files). The agent's instructions are in §6.2. Bound it two ways: a **turn/step budget** and a
-   **wall-clock timeout**.
-4. After the agent exits, commit any changes and compute the diff.
+   **wall-clock timeout**. Give it **full execution autonomy inside the sandbox** — it must be able to
+   run the smoke command and commit, i.e. execute shell / tests / VCS headless, not just edit files. (A
+   permission/approval mode that auto-accepts *edits only* still gates shell commands; a headless agent
+   then can't test or commit and stalls. The sandbox is a disposable, isolated copy — let it run freely.)
+4. After the agent exits, commit any changes and compute the diff. **Diff the intended source only:** the
+   agent's own tooling (config dirs, caches, language-server state) may drop files into the sandbox;
+   exclude those (e.g. a local VCS-ignore) so the patch isn't polluted and the size budget isn't blown by
+   artifacts that aren't the fix.
 
 Secrets (LLM key, code-host token) enter the sandbox via environment, **never** on a logged
 command line. The agent only ever pushes to its own bot branch; opening the PR is done by the
@@ -649,6 +661,22 @@ not them.
   fixture repo with a *known* bug and a small budget; assert the produced diff turns the smoke gate
   red → green. Run it on a schedule or a label, never on every commit.
 
+### Build acceptance — drive a real error end-to-end, and iterate
+
+The tests above are unit / functional / integration. None of them is the real proof. **The real proof —
+and how you know the build is done — is a live end-to-end run:** stand up the actual stack (the log store,
+a log-producing app or fixture), make the app emit a *real* error, run the watchdog against it, and
+confirm the whole loop — ingest → triage → sandboxed fix → smoke gate → report (and PR, if enabled) —
+produces a *correct* outcome: the incident clustered, the diff minimal and clean, the gate green, the
+report right.
+
+**A service this complex will not work on the first iteration.** Treat building it as a loop: build → run
+the live loop → read what it actually produced → fix the bug → run again, until a real error heals
+cleanly. Most bugs only surface here, not in the unit tests — they live in the *seams*: the agent's
+headless permissions, what the diff captures, the sandbox's runtime, the log-query window, the model's
+output shape. Budget for several of these iterations — finishing the unit tests is the *start* of this
+loop, not the end.
+
 ---
 
 ## 15. Lessons learned (worth not re-learning)
@@ -686,6 +714,17 @@ not them.
     agent" means "the gate passes" — no surprises at the gate.
 13. **Stay provider-agnostic.** Route the triage model behind an abstraction and keep the coding agent
     behind a small strategy. You *will* want to swap models for cost or capability.
+14. **The coding agent needs real execution rights in the sandbox.** A headless agent in an edit-only
+    approval mode can't run the smoke command or commit — every shell call is gated, and it stalls with a
+    written-but-untested change. The sandbox is a disposable, isolated copy: give the agent full autonomy
+    to run shell / tests / VCS.
+15. **Isolate the fix diff from the agent's own footprint.** Coding agents and their tooling drop config
+    and cache files into the working dir; if your diff is "everything that changed," those pollute the
+    patch and can blow the size budget. Compute the diff over the intended source only (ignore tooling
+    artifacts).
+16. **Unit tests don't prove this works — a live end-to-end run does.** A service this complex always has
+    first-iteration bugs that only appear when a real error flows through the real stack. Build it, run
+    the whole loop for real, watch what it produces, fix, and repeat until an error heals cleanly (§14).
 
 ---
 
@@ -703,6 +742,10 @@ You don't need all of this on day one. A sensible order, each phase independentl
 4. **Turn on PRs + remedy dedup.** Open PRs into the review branch behind the dedup cascade. Now it's
    the full self-healing loop.
 5. **Operational polish.** Digests, retention, metrics, mute, manual re-run, circuit breaker.
+
+**Verify each phase against a live run, not just its unit tests** — the bugs that matter live in the seams
+and only show up end-to-end. Expect the first working version to take several build → run → observe → fix
+iterations (§14).
 
 ---
 
@@ -926,10 +969,14 @@ shims · pass the smoke command · end with ONE commit:
 (or a clean no-commit deferral).
 ```
 
-**Invocation contract:** capture the agent's **final message** and the **diff**, then classify the run
-into a status (App. E) from `(exit_code, hit_turn_budget, hit_wall_clock, diff_empty, smoke_result,
-has_narrative)`. Secrets reach the sandbox via env, never on a logged argv. The agent pushes only its
-own bot branch; the **orchestrator** opens the PR.
+**Invocation contract:** run the agent headless with **full execution autonomy in the sandbox** — it must
+run the smoke command and VCS itself, so it needs unrestricted shell, **not** an edit-only approval mode
+that gates Bash (a gated headless agent can't test or commit and stalls). Capture the agent's **final
+message** and the **diff** — computed over the intended source only, **excluding tooling artifacts the
+agent drops** (its config/cache dirs) so the patch isn't polluted — then classify the run into a status
+(App. E) from `(exit_code, hit_turn_budget, hit_wall_clock, diff_empty, smoke_result, has_narrative)`.
+Secrets reach the sandbox via env, never on a logged argv. The agent pushes only its own bot branch; the
+**orchestrator** opens the PR.
 
 ## Appendix E — Statuses, the gate, and branch naming (exact)
 

@@ -11,9 +11,12 @@ agent had to make on its own.
 ## How it was produced
 
 A headless `claude` (model `claude-opus-4-8`), given only `ESSENCE.md` + the watchdog-agnostic fastapi
-context, ran ~19 minutes / 62 turns and produced everything here. Nothing was hand-written or edited
-afterward — only the `.venv`, caches, and a duplicated `ESSENCE.md` were stripped. **73/73 tests pass
-offline.**
+context, ran ~19 minutes / 62 turns and produced everything here. **73/73 tests pass offline.** The code is
+the agent's, with **two small fixes applied after testing it live** against a real Loki + a real Anthropic
+key: the coding-agent CLI now runs with full autonomy in its sandbox (so it can run the gate + commit
+headless), and the fix diff excludes the agent's own tooling artifacts. Both were fed back into the spec
+(`ESSENCE.md` §4E, Appendix D, lessons 14–15). (Otherwise only the `.venv`, caches, and a duplicated
+`ESSENCE.md` were stripped.)
 
 ## What the agent built
 

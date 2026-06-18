@@ -72,6 +72,16 @@ class LocalGitSandbox:
         )
         self._root = tmp
         _git(tmp, "init", "-q")
+        # Ignore tooling artifacts the coding agent may drop into the sandbox during its run
+        # (its own config/cache dirs, venvs, __pycache__) so they never pollute the fix diff.
+        # Written to .git/info/exclude (not a tracked .gitignore) so it doesn't show in the diff.
+        with open(os.path.join(tmp, ".git", "info", "exclude"), "a", encoding="utf-8") as f:
+            f.write("\n# watchdog: tooling artifacts (never part of a fix diff)\n")
+            f.write("\n".join((
+                ".venv/", "venv/", "__pycache__/", "*.pyc", ".pytest_cache/",
+                "watchdog_data/", "node_modules/", ".serena/", ".claude/",
+                ".mypy_cache/", ".ruff_cache/",
+            )) + "\n")
         _git(tmp, "checkout", "-q", "-b", self.prod_branch)
         _git(tmp, "add", "-A")
         _git(tmp, "commit", "-q", "-m", "watchdog: pristine production snapshot")

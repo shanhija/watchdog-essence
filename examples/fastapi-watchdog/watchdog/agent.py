@@ -196,7 +196,10 @@ class ClaudeCliCodingAgent(BaseCodingAgent):
             self.cli_cmd,
             "-p", prompt,
             "--max-turns", str(self.turn_budget),
-            "--permission-mode", "acceptEdits",
+            # The sandbox is a throwaway, isolated copy, so the agent runs with full autonomy:
+            # it must be able to run Bash (the smoke gate + git) headless. `acceptEdits` gates
+            # Bash, leaving a headless agent unable to test or commit (ESSENCE Appendix D, §4E).
+            "--dangerously-skip-permissions",
             "--output-format", "text",
         ]
         if self.model:
